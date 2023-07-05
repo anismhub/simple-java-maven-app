@@ -3,9 +3,13 @@ node {
         stage('Build') {
 		sh 'mvn -B -DskipTests clean package'
         }
-        stage('Test') {
-		sh 'mvn test -Dmaven.test.failure.ignore=true'
-		junit 'target/surefire-reports/*.xml'
+        stage('Test') {try {
+                sh 'mvn test'
+            } catch (Exception e) {
+                echo "Test failed: ${e.message}"
+            } finally {
+                junit 'target/surefire-reports/*.xml'
+            }
         }
     }
 }
