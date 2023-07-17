@@ -1,20 +1,31 @@
-node {
-    docker.image('maven:3.9.3-eclipse-temurin-11').inside('-v /root/.m2:/root/.m2'){
-        stage('Build') {
-		    sh 'mvn -B -DskipTests clean package'
+pipeline {
+    agent {
+        docker {
+            image 'maven:3.9.0'
+            args '-v /root/.m2:/root/.m2'
         }
-        stage('Test') {
-            try {
-                sh 'mvn test'
-            } catch (Exception e) {
-                echo "Test failed: ${e.message}"
-            } finally {
-                junit 'target/surefire-reports/*.xml'
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn -B -DskipTests clean package'
             }
         }
-        stage('Deploy') {
-            sh './jenkins/scripts/deliver.sh'
-            sleep(time:1, unit:"MINUTES")
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    junit 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+        stage('Deliver') {
+            steps {
+                sh './jenkins/scripts/deliver.sh'
+                sleep(time:1, unit:"MINUTES")
+            }
         }
     }
 }
